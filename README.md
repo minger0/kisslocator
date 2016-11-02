@@ -37,3 +37,6 @@ It is easy and practical to source into an intranet wiki (given that html/js is 
 (2) Update the KISSLocator_config.js file so that it stores references to your uploaded maps
 
 (3) Enjoy!
+
+
+[![Donate](http://pledgie.com/campaigns/32826.png)](https://pledgie.com/campaigns/32826)
