@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<!--
+// Copyright (c) 2011, Gergely Mincsovics
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//    * Redistributions of source code must retain the above copyright
+//      notice, this list of conditions and the following disclaimer.
+//    * Redistributions in binary form must reproduce the above copyright
+//      notice, this list of conditions and the following disclaimer in the
+//      documentation and/or other materials provided with the distribution.
+//    * Neither the name of the author nor the
+//      names of its contributors may be used to endorse or promote products
+//      derived from this software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDER AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER BE LIABLE FOR ANY
+// DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-->
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="description" content="KISSLocator links you and your colleagues to your own maps or floor plans.">
+<meta name="keywords" content="KISSLocator, locator, floor plan, map, campus, building, floor, office, store, desk, seat, colleague">
+<meta name="author" content="Gergely Mincsovics">
+<title>KISSLocator</title>
+</head>
+<body>
+<div class="headline">
+	<a href="http://github/kisslocator">KISSLocator</a>
+	<div class="byline" style="display:inline;"> by Gergely Mincsovics</div>
+</div>
+<script src="KISSLocator_config.js"></script>
+<div id="msg">
+</div>
+<script>
+function getOffsetRect(element) {
+	var clientRect = element.getBoundingClientRect()
+	var docElement = document.documentElement
+	return {	top:  clientRect.top  + window.pageYOffset - docElement.clientTop, 
+				left: clientRect.left + window.pageXOffset - docElement.clientLeft }
+}
+
+function getUrlArgs() {
+var args = {};
+var parts = window.location.href.match(/(^[^#]*)/)[0].replace(/[?&]+([^=&]+)=([^&]*)/gi, function(x,key,value) {
+args[key] = value;
+});
+return args;
+}
+</script>
+
+<style>
+.map {
+position: relative;
+display: inline;
+max-width: 100%;
+height: 100%;
+}
+
+.marker {
+position: absolute;
+width: 50px;
+-webkit-animation: pulsate 2s ease-out;
+-webkit-animation-iteration-count: infinite; 
+animation: pulsate 2s ease-out;
+animation-iteration-count: infinite; 
+}
+@-webkit-keyframes pulsate {
+	0% {-webkit-transform: scale(0.9, 0.8); opacity: 0.8;}
+	50% {-webkit-transform: scale(1.0, 1.0); opacity: 1.0;}
+	100% {-webkit-transform: scale(0.9, 0.8); opacity: 0.8;}
+}
+@keyframes pulsate {
+	0% {transform: scale(0.9, 0.8); opacity: 0.8;}
+	50% {transform: scale(1.0, 1.0); opacity: 1.0;}
+	100% {transform: scale(0.9, 0.8); opacity: 0.8;}
+}
+
+.linkarea {
+display: inline;
+}
+</style>
+
+<div id="msg">
+</div>
+
+<div id="mapblock">
+</div>
+
+<script>
+var arrowimagename = 'topleft_arrow_transparent_bg.png';
+var area = {};
+var titles = [];
+var links = [];
+var areaErrorMessage = 'Specify the area in locator_config.js as a hashmap of sub-area titles and corresponding images!';
+if (getUrlArgs()['area']) {
+	area = getUrlArgs()['area'];
+	if (config[area]) {
+		titles = Object.keys(config[area]);
+		links = titles.map(function(v) { return config[area][v]; });
+	} else {
+		document.getElementById('msg').innerHTML=areaErrorMessage;
+	}
+} else {
+	if (config){
+		var areaList = Object.keys(config);
+		var mainList = '<h3 class="content">Areas</h3>';
+		mainList+='<ul>';
+		for (var i = 0; i < areaList.length; i++) {
+			mainList+='<li><a href="' + window.location.href + '?area=' + areaList[i] + '">' + areaList[i] + '</a></li>';
+		}
+		mainList+='</ul>';
+		document.getElementById('msg').innerHTML=mainList;
+	} else {
+		document.getElementById('msg').innerHTML=areaErrorMessage;
+	}
+}
+
+for (var i = 0; i < titles.length; i++) {
+	(function(id,titles,links){
+	document.getElementById('mapblock').innerHTML+= "" +
+		'<h3 id="map'+id.toString()+'">'+titles[id].toString()+'</h3>' +
+		'link:' +
+		'<div id="linkmap'+id.toString()+'" class="linkarea">' +
+		'</div>' +
+		'<div id="mapwrap'+id.toString()+'">' +
+		'  <img id="imap'+id.toString()+'" class="map" src="'+links[id].toString()+'">' +
+		'  <img id="markermap'+id.toString()+'" class="marker" src="'+arrowimagename+'">' +
+		'</div>';
+	}(i,titles,links));
+}
+
+for (var i = 0; i < titles.length; i++) {
+	(function(id){
+		document.getElementById('imap' + id.toString()).addEventListener('click', function(e) {
+			//document.getElementById('msg').innerHTML='imap' + id.toString();
+			var rect = getOffsetRect(document.getElementById('imap' + id.toString()));
+			//document.getElementById('msg').innerHTML=e.clientY + ' , ' +e.pageY + '-'+ rect.top + ', ' + 'imap' + id.toString();
+			var coordx = e.pageX - rect.left;
+			var coordy = e.pageY - rect.top;
+			var naturalwidth = document.getElementById('imap' + id.toString()).naturalWidth;
+			var renderedwidth = document.getElementById('imap' + id.toString()).width;
+			var naturalheight = document.getElementById('imap' + id.toString()).naturalHeight;
+			var renderedheight = document.getElementById('imap' + id.toString()).height;
+			if(naturalwidth!=renderedwidth || naturalheight!=renderedheight) {
+				coordx = coordx * naturalwidth/renderedwidth;
+				coordy = coordy * naturalheight/renderedheight;
+			}
+			var url = window.location.href.replace(/&x=.*/,'') + '&x=' +coordx +'&y=' + coordy + '#map' + id.toString();
+			document.getElementById('linkmap' + id.toString()).innerHTML='<a href="' + url + '">' + url + '</a>';
+		}, false);
+	}(i));
+}
+
+function onResize() {
+	var anchor = window.location.hash.substr(1);
+	if (anchor) {
+		var rect = getOffsetRect(document.getElementById('i' + anchor));
+		var coordx=+getUrlArgs()['x'];
+		var coordy=+getUrlArgs()['y'];
+		var naturalwidth = document.getElementById('i' + anchor).naturalWidth;
+		var renderedwidth = document.getElementById('i' + anchor).width;
+		var naturalheight = document.getElementById('i' + anchor).naturalHeight;
+		var renderedheight = document.getElementById('i' + anchor).height;
+		if(naturalwidth!=renderedwidth || naturalheight!=renderedheight) {
+			//document.getElementById('msg').innerHTML=' scaling happening ' + document.getElementById('i' + anchor).naturalWidth + ' -> ' + document.getElementById('i' + anchor).offsetWidth + ' -> '+ document.getElementById('i' + anchor).width;
+			coordx = coordx * renderedwidth/naturalwidth;
+			coordy = coordy * renderedheight/naturalheight;
+		}
+		coordx+=rect.left;
+		coordy+=rect.top;
+		var style = document.createElement('style');
+		style.type = 'text/css';
+		//document.getElementById('msg').innerHTML='#marker'+anchor+' { left: ' +coordx + 'px; top: ' + coordy + 'px; }';
+		style.innerHTML = '#marker'+anchor+' { left: ' +coordx + 'px; top: ' + coordy + 'px; }';
+		document.getElementsByTagName('head')[0].appendChild(style);
+	}
+}
+onResize();
+var anchor = window.location.hash.substr(1);
+window.addEventListener('resize', onResize);
+</script>
+</body>
+</html>
